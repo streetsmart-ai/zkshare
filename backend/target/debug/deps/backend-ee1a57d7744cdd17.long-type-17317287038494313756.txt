@@ -1,0 +1,2 @@
+fn(Json<TokenRequest>, Extension<Client>) -> impl Future<Output = impl IntoResponse> {create_token}
+fn(Json<TokenRequest>, Extension<Client>) -> impl Future<Output = impl IntoResponse> {create_token}: Handler<_, _>

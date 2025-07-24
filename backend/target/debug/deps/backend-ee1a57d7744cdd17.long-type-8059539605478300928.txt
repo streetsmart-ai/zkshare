@@ -1,0 +1,1 @@
+axum::middleware::FromFn<fn(axum::http::Request<_>, Next, Extension<Client>) -> impl Future<Output = Result<Response<Body>, StatusCode>> {rate_limit::<_>}, Client, Route, _>: Service<axum::http::Request<Body>>

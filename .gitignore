@@ -1,0 +1,60 @@
+# Node
+node_modules/
+
+# Rust
+/target/
+Cargo.lock
+
+# Python
+__pycache__/
+*.pyc
+
+# Environment files
+.env
+*.env
+*.env.*
+!.env.example
+!.env.*.example
+
+# Vite/React
+/dist/
+
+# MacOS
+.DS_Store
+
+# Docker
+*.pid
+
+# Logs
+*.log
+
+# Ignore zkdotenv secrets
+dotenv/.zk.env
+zkdotenv/.zk.env
+
+# Misc
+*.swp 
+
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
