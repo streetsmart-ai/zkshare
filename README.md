@@ -140,5 +140,3 @@ This frontend is meant as a reference implementation. You can adapt the flows fo
 ## License
 
 MIT. See [LICENSE](LICENSE) for details.
-# zkshare
-# zkshare
