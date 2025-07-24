@@ -103,12 +103,12 @@ This frontend is meant as a reference implementation. You can adapt the flows fo
 
 1. **Clone the repo:**
    ```bash
-   git clone https://github.com/yourorg/zkshare.git
+   git clone https://github.com/streetsmart-ai/zkshare.git
    cd zkshare
    ```
 2. **Start Redis:**
    ```bash
-   docker-compose up -d redis
+   docker run --rm -p 6379:6379 redis
    ```
 3. **Run the backend:**
    ```bash
@@ -117,13 +117,13 @@ This frontend is meant as a reference implementation. You can adapt the flows fo
    ```
 4. **Try the frontend:**
    ```bash
-   cd ../frontend
+   cd frontend
    npm install
    npm run dev
    ```
 5. **Try zkdotenv:**
    ```bash
-   cd ../zkdotenv
+   cd zkdotenv
    python3 test_zkcloud_encrypt.py
    python3 test_zkcloud_decrypt.py
    ```
