@@ -2,7 +2,7 @@
 node_modules/
 
 # Rust
-/target/
+backend/target/
 Cargo.lock
 
 # Python
