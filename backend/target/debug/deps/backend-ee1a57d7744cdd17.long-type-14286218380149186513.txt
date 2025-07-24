@@ -1,2 +1,0 @@
-fn(Json<DecryptRequest>, Extension<Client>) -> impl Future<Output = impl IntoResponse> {decrypt_token}
-fn(Json<DecryptRequest>, Extension<Client>) -> impl Future<Output = impl IntoResponse> {decrypt_token}: Handler<_, _>
