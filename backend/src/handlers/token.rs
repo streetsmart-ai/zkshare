@@ -12,6 +12,7 @@ use std::sync::Arc;
 #[derive(Deserialize)]
 pub struct TokenRequest {
     pub ttl_hours: Option<u32>,
+    pub multi: Option<bool>,
 }
 
 pub async fn create_token(
@@ -36,6 +37,7 @@ pub async fn create_token(
         token_b: token_b.clone(),
         expires,
         created_at: Utc::now(),
+        multi: req.multi.unwrap_or(false),
     };
     println!("[DEBUG] Before getting Redis connection");
     let mut conn = match redis.get_async_connection().await {
@@ -88,8 +90,23 @@ pub async fn decrypt_token(
         Ok(c) => c,
         Err(_) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "Redis unavailable"}))),
     };
-    // Try to get and delete atomically
-    let val: Option<String> = redis::cmd("GETDEL").arg(&key).query_async(&mut conn).await.ok();
+    // In decrypt_token:
+    // Fetch the value, but only delete if not multi-use
+    let val: Option<String> = if let Ok(Some(json_str)) = redis::cmd("GET").arg(&key).query_async::<_, Option<String>>(&mut conn).await {
+        // Check if multi-use
+        if let Ok(stored) = serde_json::from_str::<StoredToken>(&json_str) {
+            if stored.multi {
+                Some(json_str)
+            } else {
+                // Single-use: delete after use
+                redis::cmd("GETDEL").arg(&key).query_async(&mut conn).await.ok()
+            }
+        } else {
+            None
+        }
+    } else {
+        None
+    };
     // Log access attempt (print for now)
     println!("[AUDIT] /api/decrypt attempt at {} for hash {}: {}", chrono::Utc::now(), token_a_hash, val.is_some());
     match val {

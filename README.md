@@ -1,6 +1,6 @@
 # zkshare
 
-A secure, zero-knowledge secret sharing and environment management toolkit. This project provides a robust backend for ephemeral secret sharing, a Python package for zero-knowledge .env encryption, and a sample React frontend to demonstrate real-world usage.
+A secure, client-side encrypted secret sharing and environment management toolkit. This project provides a robust backend for ephemeral secret sharing, a Python package for encrypted .env management, and a sample React frontend to demonstrate real-world usage.
 
 ---
 
@@ -17,10 +17,10 @@ A secure, zero-knowledge secret sharing and environment management toolkit. This
 
 ## Overview
 
-**zkshare** is designed for anyone who needs to share secrets (passwords, API keys, etc.) securely, or manage encrypted environment variables with zero-knowledge guarantees. Secrets are encrypted client-side, never stored in plaintext, and can be accessed only once before being deleted from the server.
+**zkshare** is designed for anyone who needs to share secrets (passwords, API keys, etc.) securely, or manage encrypted environment variables with server-blind encryption. Secrets are encrypted client-side, never stored in plaintext, and can be accessed only once before being deleted from the server.
 
 - **Backend:** Rust (Axum, Redis) API for token management and ephemeral secret storage.
-- **zkdotenv:** Python utilities for encrypting/decrypting .env files using a split-key, zero-knowledge approach.
+- **zkdotenv:** Python utilities for encrypting/decrypting .env files using a split-key, server-assisted approach.
 - **Frontend:** Example React app for creating and accessing secure share links.
 
 ---
@@ -51,11 +51,11 @@ The backend is a stateless, ephemeral API written in Rust using [Axum](https://g
 
 ## zkdotenv (Python)
 
-`zkdotenv` is a set of Python scripts for encrypting and decrypting environment variables with zero-knowledge guarantees. It supports both local (password-based) and cloud (split-key, server-assisted) modes.
+`zkdotenv` is a set of Python scripts for encrypting and decrypting environment variables with client-side encryption guarantees. It supports both local (password-based) and cloud (split-key, server-assisted) modes.
 
 ### Main Scripts
 
-- **zkcloud.py** — Cloud mode, uses the backend for part of the key material. Encrypts `.env` files to `.zk.env` and decrypts them back, never exposing the full secret to the server.
+- **zkcloud.py** — Cloud mode, uses the backend for part of the key material. Encrypts `.env` files to `.zk.env` and decrypts them back, keeping secrets encrypted from the server.
 - **others/zkdotenv.py** — Local mode, encrypts/decrypts using a master password (no server required).
 - **others/zkdotenvc.py** — Cloud mode, multi-variable support, and shareable links for each variable.
 

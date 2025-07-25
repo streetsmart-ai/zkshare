@@ -34,7 +34,7 @@ def read_env_lines(path):
     with open(path) as f:
         return f.readlines()
 
-def decrypt_env_file(zkenv_path, api_base='http://localhost:3001/api'):
+def decrypt_env_file(zkenv_path, api_base='http://localhost:3001/api', multi=False):
     """
     Decrypts all variables in a .zk.env file using the backend for tokenB.
     Returns a dict: {VAR: value, ...}
@@ -68,7 +68,7 @@ def decrypt_env_file(zkenv_path, api_base='http://localhost:3001/api'):
             continue
     return secrets
 
-def encrypt_env_file(env_path, zkenv_path, api_base='http://localhost:3001/api'):
+def encrypt_env_file(env_path, zkenv_path, api_base='http://localhost:3001/api', multi=False):
     """
     Encrypts all variables in a .env file using the backend for tokenA/tokenB.
     Writes encrypted values to zkenv_path (.zk.env). Preserves comments and blank lines.
@@ -89,7 +89,8 @@ def encrypt_env_file(env_path, zkenv_path, api_base='http://localhost:3001/api')
             continue
         k, v = stripped.split('=', 1)
         # 1. Request tokens from backend
-        resp = requests.post(f'{api_base}/tokens', json={})
+        payload = {'multi': multi} if multi else {}
+        resp = requests.post(f'{api_base}/tokens', json=payload)
         if not resp.ok:
             out_lines.append(f'# ERROR encrypting {k}\n')
             continue

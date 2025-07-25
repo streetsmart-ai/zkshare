@@ -13,4 +13,5 @@ pub struct StoredToken {
     pub token_b: String,      // Actual tokenB value
     pub expires: chrono::DateTime<chrono::Utc>,
     pub created_at: chrono::DateTime<chrono::Utc>,
+    pub multi: bool,          // Multi-use flag
 } 

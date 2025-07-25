@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>zkshare - zero-knowledge secret sharing</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0a0a0a;
+            --surface: #111111;
+            --border: #1a1a1a;
+            --accent: #00ff88;
+            --accent-dim: #00cc6a;
+            --text: #e0e0e0;
+            --text-dim: #888888;
+            --warning: #ff6b35;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.4;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        header {
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--accent);
+        }
+
+        /* Hero */
+        .hero {
+            padding: 100px 0;
+            text-align: left;
+        }
+
+        .hero h1 {
+            font-size: clamp(48px, 8vw, 80px);
+            font-weight: 300;
+            margin-bottom: 20px;
+            line-height: 0.9;
+        }
+
+        .hero .accent {
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        .hero p {
+            font-size: 18px;
+            color: var(--text-dim);
+            max-width: 600px;
+            margin-bottom: 40px;
+        }
+
+        .cta-group {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: 1px solid;
+            background: transparent;
+            color: var(--text);
+            text-decoration: none;
+            font-family: inherit;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent);
+            color: var(--bg);
+        }
+
+        .btn-secondary {
+            border-color: var(--border);
+            color: var(--text-dim);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--text);
+            color: var(--text);
+        }
+
+        /* Features Grid */
+        .features {
+            padding: 120px 0;
+            border-top: 1px solid var(--border);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 60px;
+        }
+
+        .feature {
+            padding: 30px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+        }
+
+        .feature-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--accent);
+            color: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+
+        .feature h3 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: var(--text);
+        }
+
+        .feature p {
+            color: var(--text-dim);
+            font-size: 14px;
+        }
+
+        /* Code Section */
+        .code-section {
+            padding: 120px 0;
+            border-top: 1px solid var(--border);
+        }
+
+        .code-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: start;
+        }
+
+        .code-block {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 30px;
+            font-size: 13px;
+            overflow-x: auto;
+        }
+
+        .code-header {
+            color: var(--text-dim);
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .code-content {
+            color: var(--text);
+        }
+
+        .code-content .comment {
+            color: var(--text-dim);
+        }
+
+        .code-content .string {
+            color: var(--accent);
+        }
+
+        .code-content .keyword {
+            color: var(--warning);
+        }
+
+        /* Stack */
+        .stack {
+            padding: 120px 0;
+            border-top: 1px solid var(--border);
+        }
+
+        .stack h2 {
+            font-size: 36px;
+            margin-bottom: 60px;
+            font-weight: 300;
+        }
+
+        .stack-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+        }
+
+        .stack-item {
+            text-align: center;
+            padding: 40px 20px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+        }
+
+        .stack-item h3 {
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: var(--accent);
+        }
+
+        .stack-item p {
+            font-size: 14px;
+            color: var(--text-dim);
+        }
+
+        /* Footer */
+        footer {
+            padding: 60px 0;
+            border-top: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 30px;
+            list-style: none;
+        }
+
+        .footer-links a {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .footer-links a:hover {
+            color: var(--accent);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .code-grid {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .cta-group {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .footer-content {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+
+        /* Subtle animations */
+        .feature:hover {
+            border-color: var(--accent);
+            transition: border-color 0.3s;
+        }
+
+        .stack-item:hover {
+            transform: translateY(-2px);
+            transition: transform 0.2s;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="#" class="logo">zkshare</a>
+            <ul class="nav-links">
+                <li><a href="#features">features</a></li>
+                <li><a href="#docs">docs</a></li>
+                <li><a href="#github">github</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <h1>zero-knowledge<br><span class="accent">secret sharing</span></h1>
+                <p>Secure, ephemeral secret sharing with client-side encryption. Share API keys, passwords, and environment variables without exposing them to servers.</p>
+                
+                <div class="cta-group">
+                    <a href="#" class="btn btn-primary">→ get started</a>
+                    <a href="#" class="btn btn-secondary">view on github</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="features" id="features">
+            <div class="container">
+                <div class="features-grid">
+                    <div class="feature">
+                        <div class="feature-icon">0</div>
+                        <h3>zero-knowledge</h3>
+                        <p>All encryption happens client-side. Servers never see your secrets in plaintext. Split-key architecture ensures no single point of failure.</p>
+                    </div>
+                    
+                    <div class="feature">
+                        <div class="feature-icon">1</div>
+                        <h3>ephemeral by design</h3>
+                        <p>One-time use tokens with configurable TTL. Secrets are automatically deleted after access, leaving no trace on the server.</p>
+                    </div>
+                    
+                    <div class="feature">
+                        <div class="feature-icon">∅</div>
+                        <h3>environment management</h3>
+                        <p>Encrypt .env files for safe version control. Decrypt on deployment with zero-knowledge guarantees using zkdotenv.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="code-section">
+            <div class="container">
+                <div class="code-grid">
+                    <div>
+                        <h2 style="font-size: 28px; margin-bottom: 30px; font-weight: 300;">encrypt your secrets</h2>
+                        <div class="code-block">
+                            <div class="code-header">python • zkcloud.py</div>
+                            <div class="code-content">
+<span class="keyword">from</span> zkcloud <span class="keyword">import</span> encrypt_env_file
+
+<span class="comment"># encrypt .env file with zero-knowledge</span>
+encrypt_env_file(
+    <span class="string">'.env'</span>, 
+    <span class="string">'.zk.env'</span>,
+    api_base=<span class="string">'http://localhost:3001/api'</span>
+)
+
+<span class="comment"># safe to commit .zk.env to version control</span>
+<span class="comment"># decryption requires both file + server access</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h2 style="font-size: 28px; margin-bottom: 30px; font-weight: 300;">share one-time secrets</h2>
+                        <div class="code-block">
+                            <div class="code-header">rust • backend api</div>
+                            <div class="code-content">
+<span class="comment">// generate token pair</span>
+<span class="keyword">POST</span> /api/tokens
+{
+  <span class="string">"token_a"</span>: <span class="string">"crypto_secure_token"</span>,
+  <span class="string">"token_b"</span>: <span class="string">"paired_token"</span>
+}
+
+<span class="comment">// one-time decrypt</span>
+<span class="keyword">POST</span> /api/decrypt
+{
+  <span class="string">"token_a"</span>: <span class="string">"crypto_secure_token"</span>
+}
+<span class="comment">// returns token_b, then deletes both</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="stack">
+            <div class="container">
+                <h2>battle-tested stack</h2>
+                <div class="stack-grid">
+                    <div class="stack-item">
+                        <h3>rust backend</h3>
+                        <p>axum + redis for high-performance, stateless API with built-in rate limiting</p>
+                    </div>
+                    
+                    <div class="stack-item">
+                        <h3>python toolkit</h3>
+                        <p>zkdotenv for environment encryption, both local and cloud modes supported</p>
+                    </div>
+                    
+                    <div class="stack-item">
+                        <h3>react frontend</h3>
+                        <p>reference implementation for browser-based secret sharing workflows</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="logo">zkshare</div>
+                <ul class="footer-links">
+                    <li><a href="#">documentation</a></li>
+                    <li><a href="#">github</a></li>
+                    <li><a href="#">license: mit</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
