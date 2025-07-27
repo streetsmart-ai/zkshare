@@ -30,11 +30,11 @@ A secure, PIN-protected secret sharing and environment management toolkit with c
 The backend is a stateless, ephemeral API written in Rust using [Axum](https://github.com/tokio-rs/axum) and Redis. It provides endpoints for:
 
 - **Token Generation:**
-  - `POST /api/tokens` — Issues a pair of cryptographically secure tokens (`token_a`, `token_b`) and stores `token_a` with `token_b` in Redis, with a configurable TTL and multi-use flag.
+  - `POST /api/tokens` - Issues a pair of cryptographically secure tokens (`token_a`, `token_b`) and stores `token_a` with `token_b` in Redis, with a configurable TTL and multi-use flag.
 - **Token Retrieval:**
-  - `POST /api/tokens/get` — Accepts `token_b`, retrieves and optionally deletes the corresponding `token_a` (based on multi-use flag), and returns it for decryption.
+  - `POST /api/tokens/get` - Accepts `token_b`, retrieves and optionally deletes the corresponding `token_a` (based on multi-use flag), and returns it for decryption.
 - **Legacy Token Decryption:**
-  - `POST /api/decrypt` — Legacy endpoint for the old two-token system (maintained for backward compatibility).
+  - `POST /api/decrypt` - Legacy endpoint for the old two-token system (maintained for backward compatibility).
 - **Health Check:**
   - `GET /api/health`
 
@@ -45,10 +45,10 @@ The backend is a stateless, ephemeral API written in Rust using [Axum](https://g
 - Rate limiting middleware to prevent abuse (configurable via environment variables).
 
 **Environment Variables:**
-- `REDIS_URL` — Redis connection string (default: `redis://localhost:6379`)
-- `SERVER_PORT` — Port to run the API (default: `3001`)
-- `RATE_LIMIT_MAX` — Max requests per window (default: `10`)
-- `RATE_LIMIT_WINDOW` — Window in seconds (default: `3600`)
+- `REDIS_URL` - Redis connection string (default: `redis://localhost:6379`)
+- `SERVER_PORT` - Port to run the API (default: `3001`)
+- `RATE_LIMIT_MAX` - Max requests per window (default: `10`)
+- `RATE_LIMIT_WINDOW` - Window in seconds (default: `3600`)
 
 ---
 
@@ -58,9 +58,9 @@ The backend is a stateless, ephemeral API written in Rust using [Axum](https://g
 
 ### Main Scripts
 
-- **zkcloud.py** — Cloud mode, uses the backend for token management and PIN-based encryption. Encrypts `.env` files to `.zk.env` and decrypts them back, keeping secrets encrypted from the server.
-- **tests/zkdotenv.py** — Local mode, encrypts/decrypts using a master password (no server required).
-- **tests/zkdotenvc.py** — Cloud mode, multi-variable support, and shareable links for each variable.
+- **zkcloud.py** - Cloud mode, uses the backend for token management and PIN-based encryption. Encrypts `.env` files to `.zk.env` and decrypts them back, keeping secrets encrypted from the server.
+- **tests/zkdotenv.py** - Local mode, encrypts/decrypts using a master password (no server required).
+- **tests/zkdotenvc.py** - Cloud mode, multi-variable support, and shareable links for each variable.
 
 ### Usage
 
@@ -181,4 +181,4 @@ This frontend is meant as a reference implementation. You can adapt the flows fo
 
 ## License
 
-MIT. See [LICENSE](LICENSE) for details.
+MIT License. See [LICENSE](LICENSE) for details.
