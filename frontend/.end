@@ -1,5 +1,0 @@
-# frontend/.env
-
-VITE_API_BASE_URL=http://localhost:3001
-VITE_DEFAULT_TTL=24
-VITE_MAX_PASSWORD_LENGTH=1000

@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import { createToken } from '../services/api';
-import { encryptPassword } from '../crypto/encryption';
+import { deriveKeyFromTokens, encryptData } from '../crypto/encryption';
 
 const MAX_LENGTH = Number(import.meta.env.VITE_MAX_PASSWORD_LENGTH) || 1000;
 
 const CreatePassword: React.FC = () => {
   const [secret, setSecret] = useState('');
+  const [pin, setPin] = useState('');
   const [link, setLink] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showSecret, setShowSecret] = useState(true);
+  const [showPin, setShowPin] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -19,9 +21,17 @@ const CreatePassword: React.FC = () => {
     setLink('');
     setCopied(false);
     try {
+      // 1. Get token pair from server
       const { token_a, token_b } = await createToken();
-      const encrypted = await encryptPassword(secret, token_a, token_b);
-      const url = `${window.location.origin}/access#${token_a}:${encrypted}`;
+      
+      // 2. Combine token_a with PIN for final encryption key
+      const finalKey = await deriveKeyFromTokens(token_a, pin);
+      
+      // 3. Encrypt secret with final key
+      const encryptedData = await encryptData(secret, finalKey);
+
+      // 4. Create share link (PIN never included!)
+      const url = `${window.location.origin}/access?token=${token_b}&data=${encodeURIComponent(encryptedData)}`;
       setLink(url);
     } catch (err: any) {
       setError(err.message || 'Failed to generate link');
@@ -38,60 +48,336 @@ const CreatePassword: React.FC = () => {
     }
   };
 
+  const handlePinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Only allow digits and limit to 6 characters
+    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+    setPin(value);
+  };
+
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #f8fafc 60%, #e0e7ef 100%)' }}>
-      <div style={{ maxWidth: 480, width: '100%', padding: 32, borderRadius: 16, background: '#fff', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
-        <h2 style={{ fontWeight: 700, fontSize: 28, marginBottom: 16, textAlign: 'center', letterSpacing: 1 }}>Create a Secure Share Link</h2>
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'var(--bg)',
+      padding: '20px'
+    }}>
+      <div style={{
+        maxWidth: '600px',
+        width: '100%',
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderRadius: '8px',
+        padding: '32px',
+        position: 'relative'
+      }}>
+        {/* Terminal header */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          marginBottom: '24px',
+          paddingBottom: '16px',
+          borderBottom: '1px solid var(--border)'
+        }}>
+          <div style={{
+            width: '12px',
+            height: '12px',
+            borderRadius: '50%',
+            background: 'var(--accent)',
+            marginRight: '12px',
+            boxShadow: '0 0 8px var(--accent)'
+          }} />
+          <span style={{
+            color: 'var(--accent)',
+            fontSize: '14px',
+            fontWeight: '500',
+            fontFamily: 'JetBrains Mono, monospace'
+          }}>
+            zkshare@terminal:~$ create_secure_share
+          </span>
+        </div>
+
+        <h2 style={{
+          fontSize: '24px',
+          fontWeight: '500',
+          marginBottom: '24px',
+          color: 'var(--text)',
+          textAlign: 'center'
+        }}>
+          <span className="glow">share secrets.</span>
+          <br />
+          <span style={{ color: 'var(--accent)' }}>leave no trace.</span>
+        </h2>
+
         <form onSubmit={handleSubmit}>
-          <label style={{ fontWeight: 500, marginBottom: 8, display: 'block' }}>
-            Secret to Share
+          <label style={{
+            display: 'block',
+            marginBottom: '8px',
+            color: 'var(--text)',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+            secret to encrypt:
           </label>
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
+          
+          <div style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            marginBottom: '16px',
+            gap: '8px'
+          }}>
             <textarea
               value={showSecret ? secret : '*'.repeat(secret.length)}
               onChange={e => setSecret(e.target.value.slice(0, MAX_LENGTH))}
-              placeholder="Paste or type your secret (max 1000 characters)"
-              rows={5}
-              style={{ flex: 1, minWidth: 0, padding: '12px', fontSize: 16, borderRadius: 8, border: '1px solid #cbd5e1', background: '#fff', color: '#222', resize: 'vertical', letterSpacing: 0.2, transition: 'background 0.2s' }}
+              placeholder="paste your secret here (api keys, passwords, etc.)"
+              rows={6}
+              style={{
+                flex: 1,
+                background: 'var(--bg)',
+                border: '1px solid var(--border)',
+                color: 'var(--text)',
+                padding: '16px',
+                fontSize: '14px',
+                borderRadius: '4px',
+                resize: 'vertical',
+                fontFamily: 'JetBrains Mono, monospace',
+                minHeight: '120px'
+              }}
               maxLength={MAX_LENGTH}
               spellCheck={false}
               autoFocus
               readOnly={loading}
-              aria-label="Secret to Share"
             />
             <button
               type="button"
               onClick={() => setShowSecret(s => !s)}
-              style={{ marginLeft: 8, background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#64748b', display: 'flex', alignItems: 'center', height: 32 }}
-              aria-label={showSecret ? 'Hide secret' : 'Show secret'}
+              style={{
+                background: 'none',
+                border: '1px solid var(--border)',
+                color: 'var(--text-dim)',
+                padding: '8px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '16px',
+                minWidth: '40px',
+                height: '40px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
             >
               {showSecret ? '🙈' : '👁️'}
             </button>
           </div>
-          <div style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>
-            This can be any sensitive text (password, API key, note, etc). It will be encrypted in your browser. Max {MAX_LENGTH} characters.
-          </div>
-          <button
-            type="submit"
-            style={{ width: '100%', padding: 14, fontSize: 17, fontWeight: 600, borderRadius: 8, background: 'linear-gradient(90deg, #6366f1 60%, #0ea5e9 100%)', color: '#fff', border: 'none', boxShadow: '0 2px 8px rgba(99,102,241,0.08)', cursor: loading ? 'not-allowed' : 'pointer', marginBottom: 8, transition: 'background 0.2s' }}
-            disabled={loading || !secret.trim()}
-          >
-            {loading ? 'Generating...' : 'Generate Link'}
-          </button>
-        </form>
-        {link && (
-          <div style={{ marginTop: 24, padding: 18, background: '#f1f5f9', borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-            <div style={{ fontWeight: 500, marginBottom: 8 }}>Share this link:</div>
-            <div style={{ wordBreak: 'break-all', fontSize: 15, marginBottom: 10, color: '#334155' }}>{link}</div>
+
+          <label style={{
+            display: 'block',
+            marginBottom: '8px',
+            color: 'var(--text)',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+            security pin (6 digits):
+          </label>
+          
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            marginBottom: '16px',
+            gap: '8px'
+          }}>
+            <input
+              type={showPin ? 'text' : 'password'}
+              value={pin}
+              onChange={handlePinChange}
+              placeholder="enter 6-digit pin..."
+              style={{
+                flex: 1,
+                background: 'var(--bg)',
+                border: '1px solid var(--border)',
+                color: 'var(--text)',
+                padding: '16px',
+                fontSize: '14px',
+                borderRadius: '4px',
+                fontFamily: 'JetBrains Mono, monospace'
+              }}
+              pattern="[0-9]{6}"
+              maxLength={6}
+              readOnly={loading}
+            />
             <button
-              onClick={handleCopy}
-              style={{ padding: '8px 18px', borderRadius: 6, background: copied ? '#22c55e' : '#6366f1', color: '#fff', border: 'none', fontWeight: 500, fontSize: 15, cursor: 'pointer', transition: 'background 0.2s' }}
+              type="button"
+              onClick={() => setShowPin(s => !s)}
+              style={{
+                background: 'none',
+                border: '1px solid var(--border)',
+                color: 'var(--text-dim)',
+                padding: '8px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '16px',
+                minWidth: '40px',
+                height: '40px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
             >
-              {copied ? 'Copied!' : 'Copy to Clipboard'}
+              {showPin ? '🙈' : '👁️'}
             </button>
           </div>
+
+          <div style={{
+            fontSize: '12px',
+            color: 'var(--text-dim)',
+            marginBottom: '24px',
+            fontFamily: 'JetBrains Mono, monospace'
+          }}>
+            max {MAX_LENGTH} chars • encrypted client-side • pin never stored • one-time use
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading || !secret.trim() || pin.length !== 6}
+            style={{
+              width: '100%',
+              padding: '16px',
+              fontSize: '16px',
+              fontWeight: '500',
+              background: 'var(--surface)',
+              border: '1px solid var(--accent)',
+              color: 'var(--accent)',
+              borderRadius: '4px',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              fontFamily: 'JetBrains Mono, monospace',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            {loading ? 'generating secure link...' : 'generate secure link'}
+          </button>
+        </form>
+
+        {link && (
+          <div className="fade-in" style={{
+            marginTop: '24px',
+            padding: '20px',
+            background: 'var(--bg)',
+            border: '1px solid var(--border)',
+            borderRadius: '4px'
+          }}>
+            <div style={{
+              fontSize: '14px',
+              color: 'var(--accent)',
+              marginBottom: '12px',
+              fontWeight: '500'
+            }}>
+              secure link generated:
+            </div>
+            <div style={{
+              wordBreak: 'break-all',
+              fontSize: '13px',
+              color: 'var(--text-dim)',
+              marginBottom: '16px',
+              padding: '12px',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: '4px',
+              fontFamily: 'JetBrains Mono, monospace'
+            }}>
+              {link}
+            </div>
+            <button
+              onClick={handleCopy}
+              style={{
+                padding: '8px 16px',
+                fontSize: '14px',
+                background: copied ? 'var(--success)' : 'var(--surface)',
+                border: `1px solid ${copied ? 'var(--success)' : 'var(--accent)'}`,
+                color: copied ? 'var(--bg)' : 'var(--accent)',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontFamily: 'JetBrains Mono, monospace'
+              }}
+            >
+              {copied ? 'copied!' : 'copy link'}
+            </button>
+            
+            <div style={{
+              marginTop: '16px',
+              padding: '12px',
+              background: 'rgba(255, 193, 7, 0.1)',
+              border: '1px solid #ffc107',
+              borderRadius: '4px',
+              fontSize: '13px',
+              color: '#ffc107'
+            }}>
+              ⚠️ <strong>IMPORTANT:</strong> Share the PIN separately via secure channel!
+            </div>
+            
+            <div style={{
+              marginTop: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <label style={{
+                fontSize: '13px',
+                color: 'var(--text-dim)',
+                fontWeight: '500'
+              }}>
+                PIN to share:
+              </label>
+              <input
+                type="text"
+                value={pin}
+                readOnly
+                style={{
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text)',
+                  padding: '8px 12px',
+                  fontSize: '13px',
+                  borderRadius: '4px',
+                  fontFamily: 'JetBrains Mono, monospace',
+                  width: '80px',
+                  textAlign: 'center'
+                }}
+                onClick={(e) => e.currentTarget.select()}
+              />
+              <button
+                onClick={() => navigator.clipboard.writeText(pin)}
+                style={{
+                  padding: '6px 12px',
+                  fontSize: '12px',
+                  background: 'var(--surface)',
+                  border: '1px solid var(--accent)',
+                  color: 'var(--accent)',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontFamily: 'JetBrains Mono, monospace'
+                }}
+              >
+                copy pin
+              </button>
+            </div>
+          </div>
         )}
-        {error && <div style={{ color: 'red', marginTop: 16, textAlign: 'center' }}>{error}</div>}
+
+        {error && (
+          <div style={{
+            color: 'var(--error)',
+            marginTop: '16px',
+            textAlign: 'center',
+            fontSize: '14px',
+            padding: '12px',
+            background: 'rgba(255, 68, 68, 0.1)',
+            border: '1px solid var(--error)',
+            borderRadius: '4px'
+          }}>
+            {error}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -18,4 +18,14 @@ export async function decryptToken(tokenA: string) {
   });
   if (!res.ok) throw new Error(`Token decryption failed: ${res.status}`);
   return res.json();
+}
+
+export async function getToken(tokenB: string) {
+  const res = await fetch(`${API_BASE}/api/tokens/get`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token_b: tokenB }),
+  });
+  if (!res.ok) throw new Error(`Token retrieval failed: ${res.status}`);
+  return res.json();
 } 

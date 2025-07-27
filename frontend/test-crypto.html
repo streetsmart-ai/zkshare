@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Crypto Test</title>
+</head>
+<body>
+    <h1>PIN-based Crypto Test</h1>
+    <div>
+        <label>Token A: <input type="text" id="tokenA" value="test-token-a"></label><br>
+        <label>PIN: <input type="text" id="pin" value="123456"></label><br>
+        <label>Message: <input type="text" id="message" value="Hello World"></label><br>
+        <button onclick="testCrypto()">Test Crypto</button>
+    </div>
+    <div id="result"></div>
+
+    <script type="module">
+        // Import the crypto functions
+        import { deriveKeyFromTokens, encryptData, decryptData } from './src/crypto/encryption.ts';
+
+        window.testCrypto = async function() {
+            try {
+                const tokenA = document.getElementById('tokenA').value;
+                const pin = document.getElementById('pin').value;
+                const message = document.getElementById('message').value;
+
+                console.log('Testing with:', { tokenA, pin, message });
+
+                // Derive key
+                const key = await deriveKeyFromTokens(tokenA, pin);
+                console.log('Key derived successfully');
+
+                // Encrypt
+                const encrypted = await encryptData(message, key);
+                console.log('Encrypted:', encrypted);
+
+                // Decrypt
+                const decrypted = await decryptData(encrypted, key);
+                console.log('Decrypted:', decrypted);
+
+                const result = document.getElementById('result');
+                result.innerHTML = `
+                    <h3>Test Results:</h3>
+                    <p><strong>Original:</strong> ${message}</p>
+                    <p><strong>Encrypted:</strong> ${encrypted}</p>
+                    <p><strong>Decrypted:</strong> ${decrypted}</p>
+                    <p><strong>Success:</strong> ${message === decrypted ? '✅ YES' : '❌ NO'}</p>
+                `;
+
+            } catch (error) {
+                console.error('Crypto test failed:', error);
+                document.getElementById('result').innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        };
+    </script>
+</body>
+</html> 

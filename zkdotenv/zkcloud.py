@@ -9,6 +9,7 @@ from cryptography.hazmat.backends import default_backend
 backend = default_backend()
 
 def derive_key(tokenA: str, tokenB: str) -> bytes:
+    """Old two-token key derivation (for backward compatibility)"""
     hkdf = HKDF(
         algorithm=hashes.SHA256(),
         length=32,
@@ -17,6 +18,18 @@ def derive_key(tokenA: str, tokenB: str) -> bytes:
         backend=backend
     )
     return hkdf.derive(tokenB.encode())
+
+def derive_key_from_tokens(tokenA: str, pin: str) -> bytes:
+    """New PIN-based key derivation"""
+    combined = tokenA + pin
+    hkdf = HKDF(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=b'zkshare-pin-salt',  # Fixed salt for PIN-based
+        info=b'zkdotenv-pin',
+        backend=backend
+    )
+    return hkdf.derive(combined.encode())
 
 def encrypt_value(value: str, key: bytes) -> str:
     aesgcm = AESGCM(key)
@@ -34,12 +47,23 @@ def read_env_lines(path):
     with open(path) as f:
         return f.readlines()
 
-def decrypt_env_file(zkenv_path, api_base='http://localhost:3001/api', multi=False):
+def get_pin(prompt="Enter 6-digit PIN: "):
+    """Get PIN from user input with validation"""
+    while True:
+        pin = input(prompt).strip()
+        if len(pin) == 6 and pin.isdigit():
+            return pin
+        print("PIN must be exactly 6 digits. Please try again.")
+
+def decrypt_env_file(zkenv_path, api_base='http://localhost:3001/api', multi=False, pin=None):
     """
-    Decrypts all variables in a .zk.env file using the backend for tokenB.
+    Decrypts all variables in a .zk.env file using the new PIN-based system.
     Returns a dict: {VAR: value, ...}
-    Now expects VAR_ENC=<tokenA>:<encrypted> (no comment).
+    Now expects VAR_ENC=<tokenB>:<encrypted> (new format).
     """
+    if not pin:
+        pin = get_pin("Enter 6-digit PIN for decryption: ")
+    
     zk_lines = read_env_lines(zkenv_path)
     secrets = {}
     for line in zk_lines:
@@ -51,56 +75,85 @@ def decrypt_env_file(zkenv_path, api_base='http://localhost:3001/api', multi=Fal
             continue
         var = k[:-4]
         try:
-            tokenA, encrypted = v.split(':', 1)
+            tokenB, encrypted = v.split(':', 1)
         except Exception:
             continue
-        # 1. Request tokenB from backend
-        resp = requests.post(f'{api_base}/decrypt', json={'token_a': tokenA})
+        
+        # 1. Get tokenA from server using tokenB
+        resp = requests.post(f'{api_base}/tokens/get', json={'token_b': tokenB})
         if not resp.ok:
+            print(f"Warning: Failed to get tokenA for {var}")
             continue
-        tokenB = resp.json()['token_b']
-        # 2. Derive key and decrypt
-        key = derive_key(tokenA, tokenB)
+        
+        data = resp.json()
+        tokenA = data['token_a']
+        should_delete = data.get('should_delete', False)
+        
+        # 2. Derive key using tokenA + PIN and decrypt
+        key = derive_key_from_tokens(tokenA, pin)
         try:
             value = decrypt_value(encrypted, key)
             secrets[var] = value
-        except Exception:
+            
+            # 3. Delete token only after successful decryption
+            if should_delete:
+                delete_resp = requests.post(f'{api_base}/tokens/delete', json={'token_b': tokenB})
+                if not delete_resp.ok:
+                    print(f"Warning: Failed to delete token for {var}")
+                    
+        except Exception as e:
+            print(f"Warning: Failed to decrypt {var}: {e}")
             continue
+    
     return secrets
 
-def encrypt_env_file(env_path, zkenv_path, api_base='http://localhost:3001/api', multi=False):
+def encrypt_env_file(env_path, zkenv_path, api_base='http://localhost:3001/api', multi=False, pin=None):
     """
-    Encrypts all variables in a .env file using the backend for tokenA/tokenB.
+    Encrypts all variables in a .env file using the new PIN-based system.
     Writes encrypted values to zkenv_path (.zk.env). Preserves comments and blank lines.
-    Now stores as VAR_ENC=<tokenA>:<encrypted> (no comment).
+    Now stores as VAR_ENC=<tokenB>:<encrypted> (new format).
     """
+    if not pin:
+        pin = get_pin("Enter 6-digit PIN for encryption: ")
+    
     def read_env_lines(path):
         with open(path) as f:
             return f.readlines()
+    
     def write_zkenv_lines(path, lines):
         with open(path, 'w') as f:
             f.writelines(lines)
+    
     env_lines = read_env_lines(env_path)
     out_lines = []
+    
     for line in env_lines:
         stripped = line.strip()
         if not stripped or stripped.startswith('#') or '=' not in stripped:
             out_lines.append(line)
             continue
+        
         k, v = stripped.split('=', 1)
+        
         # 1. Request tokens from backend
         payload = {'multi': multi} if multi else {}
         resp = requests.post(f'{api_base}/tokens', json=payload)
         if not resp.ok:
             out_lines.append(f'# ERROR encrypting {k}\n')
             continue
+        
         data = resp.json()
         tokenA = data['token_a']
         tokenB = data['token_b']
-        # 2. Derive key and encrypt
-        key = derive_key(tokenA, tokenB)
+        
+        # 2. Derive key using tokenA + PIN and encrypt
+        key = derive_key_from_tokens(tokenA, pin)
         encrypted = encrypt_value(v, key)
-        # 3. Output as VAR_ENC=<tokenA>:<encrypted>
-        out_lines.append(f"{k}_ENC={tokenA}:{encrypted}\n")
+        
+        # 3. Output as VAR_ENC=<tokenB>:<encrypted> (new format)
+        out_lines.append(f"{k}_ENC={tokenB}:{encrypted}\n")
+    
     write_zkenv_lines(zkenv_path, out_lines)
+    print(f"Encryption complete! PIN used: {pin}")
+    print("IMPORTANT: Share the PIN separately via secure channel!")
     return True 

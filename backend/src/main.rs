@@ -15,7 +15,7 @@ mod models {
 mod middleware {
     pub mod rate_limit;
 }
-use handlers::token::{create_token, decrypt_token};
+use handlers::token::{create_token, decrypt_token, get_token, delete_token};
 use middleware::rate_limit::rate_limit;
 
 async fn health() -> impl IntoResponse {
@@ -47,8 +47,24 @@ async fn main() {
                 ))
         )
         .route(
+            "/api/tokens/get",
+            axum::routing::post(get_token)
+                .route_layer(axum::middleware::from_fn_with_state(
+                    redis_client.clone(), 
+                    rate_limit
+                ))
+        )
+        .route(
             "/api/decrypt",
             axum::routing::post(decrypt_token)
+                .route_layer(axum::middleware::from_fn_with_state(
+                    redis_client.clone(), 
+                    rate_limit
+                ))
+        )
+        .route(
+            "/api/tokens/delete",
+            axum::routing::post(delete_token)
                 .route_layer(axum::middleware::from_fn_with_state(
                     redis_client.clone(), 
                     rate_limit

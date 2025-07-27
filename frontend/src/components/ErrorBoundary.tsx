@@ -1,33 +1,44 @@
-import React from 'react';
+import React, { Component } from 'react';
+import type { ReactNode } from 'react';
 
-interface ErrorBoundaryState {
-  hasError: boolean;
-  error: Error | null;
+interface Props {
+  children: ReactNode;
 }
 
-class ErrorBoundary extends React.Component<React.PropsWithChildren<{}>, ErrorBoundaryState> {
-  constructor(props: React.PropsWithChildren<{}>) {
+interface State {
+  hasError: boolean;
+}
+
+class ErrorBoundary extends Component<Props, State> {
+  constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError(error: Error) {
-    return { hasError: true, error };
+  static getDerivedStateFromError(_error: Error): State {
+    return { hasError: true };
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    // Log error if needed
+  componentDidCatch(_error: Error, _errorInfo: React.ErrorInfo) {
+    // Log error to console in development
+    console.error('Error caught by boundary:', _error, _errorInfo);
   }
 
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ color: 'red', padding: 24, textAlign: 'center' }}>
+        <div style={{
+          padding: '20px',
+          textAlign: 'center',
+          color: 'var(--error)',
+          fontFamily: 'JetBrains Mono, monospace'
+        }}>
           <h2>Something went wrong.</h2>
-          <pre>{this.state.error?.message}</pre>
+          <p>Please refresh the page and try again.</p>
         </div>
       );
     }
+
     return this.props.children;
   }
 }
