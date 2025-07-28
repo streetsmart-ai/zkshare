@@ -1,0 +1,23 @@
+{
+  "name": "zkshare-website",
+  "version": "1.0.0",
+  "description": "zkshare - PIN-protected secret sharing website",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx serve .",
+    "build": "echo 'Static site - no build required'",
+    "start": "npx serve ."
+  },
+  "keywords": [
+    "zkshare",
+    "security",
+    "encryption",
+    "secret-sharing",
+    "pin-protection"
+  ],
+  "author": "zkshare",
+  "license": "MIT",
+  "devDependencies": {
+    "serve": "^14.2.1"
+  }
+} 
